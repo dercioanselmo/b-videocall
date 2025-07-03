@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
 } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -32,7 +27,21 @@ export default function RootLayout({
 }>) {
   return (    
     <html lang="en">
-      <ClerkProvider>
+      <ClerkProvider
+        appearance={{
+          layout: {
+            logoImageUrl: '/icons/logo.svg',
+            socialButtonsVariant: 'iconButton'
+          },
+          variables: {
+            colorText: '#FFF',
+            colorPrimary: '#0E78F9',
+            colorBackground: '#1C1F2E',
+            colorInputBackground: '#252A41',
+            colorInputText: '#FFF'
+          }
+        }}
+      >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-dark-2`}
       >
