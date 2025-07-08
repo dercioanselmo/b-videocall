@@ -4,24 +4,16 @@ import { useState } from "react"
 import HomeCard from "./HomeCard"
 import { useRouter } from "next/navigation";
 import MeetingModal from "./MeetingModal";
-import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner"
 
 const MeetingTypeList = () => {
   const router = useRouter();
   const [meetingState, setMeetingState] = useState<'isScheduleMeeting' | 'isJoiningMeeting' | 'isInstantMeeting' | undefined>();
 
-  // If you want to store scheduled meeting info, you can add backend logic here
-  // For Agora, just generate a channel ID (UUID) and route to meeting/[id]
-
   const createMeeting = async () => {
     try {
-      // Generate unique channel ID
       const id = crypto.randomUUID();
-
       toast("Meeting Created");
-
-      // Redirect to the meeting setup/join page
       router.push(`/meeting/${id}`);
     } catch (error) {
       console.log(error);
@@ -66,7 +58,6 @@ const MeetingTypeList = () => {
         className="text-center"
         handleClick={createMeeting}
       />
-      {/* You can add more MeetingModal components for schedule/join if you implement those features */}
     </section>
   )
 }

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAgoraClient } from '@/providers/AgoraClientProvider';
 import type { IAgoraRTCClient, IAgoraRTCRemoteUser, ICameraVideoTrack, IMicrophoneAudioTrack } from 'agora-rtc-sdk-ng';
 
-const appId = 'YOUR_AGORA_APP_ID';
+const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID as string;
 
 interface MeetingRoomProps {
   channelId: string;
@@ -17,13 +17,14 @@ const MeetingRoom = ({ channelId }: MeetingRoomProps) => {
   const localVideoRef = useRef<HTMLDivElement>(null);
   const [localTracks, setLocalTracks] = useState<[IMicrophoneAudioTrack, ICameraVideoTrack] | null>(null);
 
-  // Join the channel and publish local tracks
   const joinChannel = useCallback(async () => {
-    if (!client) return;
+    if (!client || joined) return;
+    setJoined(true);
 
+    const AgoraRTC = (await import('agora-rtc-sdk-ng')).default;
     const [microphoneTrack, cameraTrack] = await Promise.all([
-      (await import('agora-rtc-sdk-ng')).default.createMicrophoneAudioTrack(),
-      (await import('agora-rtc-sdk-ng')).default.createCameraVideoTrack(),
+      AgoraRTC.createMicrophoneAudioTrack(),
+      AgoraRTC.createCameraVideoTrack(),
     ]);
 
     setLocalTracks([microphoneTrack, cameraTrack]);
@@ -46,8 +47,7 @@ const MeetingRoom = ({ channelId }: MeetingRoomProps) => {
     await client.join(appId, channelId, null, null);
     await client.publish([microphoneTrack, cameraTrack]);
     cameraTrack.play(localVideoRef.current!);
-    setJoined(true);
-  }, [client, channelId]);
+  }, [client, joined, channelId]);
 
   useEffect(() => {
     if (client && !joined) {
