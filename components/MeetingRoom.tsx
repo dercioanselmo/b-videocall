@@ -1,8 +1,30 @@
-import React from 'react'
+import { PaginatedGridLayout, SpeakerLayout } from '@stream-io/video-react-sdk';
+import React, { useState } from 'react'
+
+type CallLayutType = 'grid' | 'speaker-left' | 'speaker-right';
 
 const MeetingRoom = () => {
+  const [layout, setLayout] = useState<CallLayutType>('speaker-left');
+
+  const CallLayout = () => {
+    switch (layout) {
+      case 'grid':
+        return <PaginatedGridLayout />
+      case 'speaker-right':
+        return <SpeakerLayout participantsBarPosition='left'/>
+      default:
+        return <SpeakerLayout participantsBarPosition='right'/>
+    }
+  }
+
   return (
-    <div>Meeting Room</div>
+      <section className='relative h-screen w-full overflow-hidden p-4 text-white'>
+        <div className='relative flex size-full items-center justify-center'>
+          <div className='flex size-full max-w[1000px] items-center'>
+            <CallLayout />
+          </div>
+        </div>
+      </section>
   )
 }
 
