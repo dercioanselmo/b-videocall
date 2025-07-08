@@ -6,9 +6,6 @@ import type { IAgoraRTCClient, IAgoraRTCRemoteUser, ICameraVideoTrack, IMicropho
 
 const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID as string;
 
-// You may need to provide a valid token for production projects
-const AGORA_TOKEN: string | null = null; // Replace this with your server-generated token if needed
-
 interface MeetingRoomProps {
   channelId: string;
 }
@@ -26,12 +23,16 @@ const MeetingRoom = ({ channelId }: MeetingRoomProps) => {
     setJoining(true);
 
     try {
+      // 1. Fetch the token from your backend
+      const res = await fetch(`/api/agora-token?channel=${channelId}&uid=0`);
+      const { token } = await res.json();
+      if (!token) throw new Error('Failed to get Agora token');
+
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default;
       const [microphoneTrack, cameraTrack] = await Promise.all([
         AgoraRTC.createMicrophoneAudioTrack(),
         AgoraRTC.createCameraVideoTrack(),
       ]);
-
       setLocalTracks([microphoneTrack, cameraTrack]);
 
       client.on('user-published', async (user, mediaType) => {
@@ -49,8 +50,8 @@ const MeetingRoom = ({ channelId }: MeetingRoomProps) => {
         setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
       });
 
-      // If using production (token required), replace AGORA_TOKEN with your token value
-      await client.join(appId, channelId, AGORA_TOKEN, null);
+      // 2. Join the channel with App ID, channelId, token, and UID (here UID=0 for auto-assign)
+      await client.join(appId, channelId, token, null);
       await client.publish([microphoneTrack, cameraTrack]);
       cameraTrack.play(localVideoRef.current!);
       setJoined(true);
