@@ -6,6 +6,9 @@ import type { IAgoraRTCClient, IAgoraRTCRemoteUser, ICameraVideoTrack, IMicropho
 
 const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID as string;
 
+// You may need to provide a valid token for production projects
+const AGORA_TOKEN: string | null = null; // Replace this with your server-generated token if needed
+
 interface MeetingRoomProps {
   channelId: string;
 }
@@ -13,44 +16,54 @@ interface MeetingRoomProps {
 const MeetingRoom = ({ channelId }: MeetingRoomProps) => {
   const client = useAgoraClient() as IAgoraRTCClient | null;
   const [joined, setJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const localVideoRef = useRef<HTMLDivElement>(null);
   const [localTracks, setLocalTracks] = useState<[IMicrophoneAudioTrack, ICameraVideoTrack] | null>(null);
 
   const joinChannel = useCallback(async () => {
-    if (!client || joined) return;
-    setJoined(true);
+    if (!client || joined || joining) return;
+    setJoining(true);
 
-    const AgoraRTC = (await import('agora-rtc-sdk-ng')).default;
-    const [microphoneTrack, cameraTrack] = await Promise.all([
-      AgoraRTC.createMicrophoneAudioTrack(),
-      AgoraRTC.createCameraVideoTrack(),
-    ]);
+    try {
+      const AgoraRTC = (await import('agora-rtc-sdk-ng')).default;
+      const [microphoneTrack, cameraTrack] = await Promise.all([
+        AgoraRTC.createMicrophoneAudioTrack(),
+        AgoraRTC.createCameraVideoTrack(),
+      ]);
 
-    setLocalTracks([microphoneTrack, cameraTrack]);
+      setLocalTracks([microphoneTrack, cameraTrack]);
 
-    client.on('user-published', async (user, mediaType) => {
-      await client.subscribe(user, mediaType);
-      if (mediaType === 'video') {
-        user.videoTrack?.play(`remote-video-${user.uid}`);
-      }
-      if (mediaType === 'audio') {
-        user.audioTrack?.play();
-      }
-      setRemoteUsers((prev) => [...prev.filter(u => u.uid !== user.uid), user]);
-    });
+      client.on('user-published', async (user, mediaType) => {
+        await client.subscribe(user, mediaType);
+        if (mediaType === 'video') {
+          user.videoTrack?.play(`remote-video-${user.uid}`);
+        }
+        if (mediaType === 'audio') {
+          user.audioTrack?.play();
+        }
+        setRemoteUsers((prev) => [...prev.filter(u => u.uid !== user.uid), user]);
+      });
 
-    client.on('user-unpublished', (user) => {
-      setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
-    });
+      client.on('user-unpublished', (user) => {
+        setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
+      });
 
-    await client.join(appId, channelId, null, null);
-    await client.publish([microphoneTrack, cameraTrack]);
-    cameraTrack.play(localVideoRef.current!);
-  }, [client, joined, channelId]);
+      // If using production (token required), replace AGORA_TOKEN with your token value
+      await client.join(appId, channelId, AGORA_TOKEN, null);
+      await client.publish([microphoneTrack, cameraTrack]);
+      cameraTrack.play(localVideoRef.current!);
+      setJoined(true);
+    } catch (e) {
+      console.error(e);
+      setJoined(false);
+    } finally {
+      setJoining(false);
+    }
+  }, [client, joined, joining, channelId]);
 
   useEffect(() => {
-    if (client && !joined) {
+    if (client && !joined && !joining) {
       joinChannel();
     }
     return () => {
