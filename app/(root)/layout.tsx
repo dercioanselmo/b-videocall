@@ -1,12 +1,12 @@
-import StreamVideoProvider from '@/providers/StreamClientProvider'
+import { AgoraClientProvider } from '@/providers/AgoraClientProvider'
 import React,{ ReactNode } from 'react'
 
 const RootLayout = ({children} : {children : ReactNode}) => {
   return (
     <main>
-      <StreamVideoProvider> 
+      <AgoraClientProvider>
         {children}
-      </StreamVideoProvider>
+      </AgoraClientProvider>
     </main>
   )
 }
